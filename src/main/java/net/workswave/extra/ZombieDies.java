@@ -29,7 +29,7 @@ public class DaProcedure {
         if (entity instanceof Zombie) {
             if (world instanceof ServerLevel _level) {
                 ItemEntity = new ItemEntity(_level, x, y, z, new ItemStack(Items.ROTTEN_FLESH));
-                entityt.setPickUpDelay(10);
+                entitytospaw.setPickUpDelay(10);
                 _level.addFreshEntity(entityToSpawn);
             }
         }
