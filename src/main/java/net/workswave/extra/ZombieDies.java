@@ -21,10 +21,28 @@ public class ZombieDies {
     }
 
     public static void OnEntityDeath(LivingDeathEvent event) {
-        if (event != null && event.getEntity() == zombie && event.getEntity() != null && zombie.getRandom().nextInt(400) == 0) {
-
+        if (event != null && event.getEntity() == zombie && event.getEntity() != null && zombie.getRandom().nextInt(400) == 0){
         }
     }
+    @Override
+    protected void dropEquipment() {
+        if (this.level() instanceof ServerLevel server) {
+            if (Math.random() <= 0.2F) {
+                final ItemEntity item = new ItemEntity(EntityType.ITEM, server);
+                item.setItem(this.getMainWeapon().getDefaultInstance());
+                item.moveTo(this.position());
+                server.addFreshEntity(item);
+            }
+            final ItemStack map = Aquamirae.getStructureMap(Aquamirae.SHELTER, server, this);
+            if (!map.isEmpty()) {
+                final ItemEntity item = new ItemEntity(EntityType.ITEM, server);
+                item.setItem(map);
+                item.moveTo(this.position());
+                server.addFreshEntity(item);
+            }
+        }
+    }
+
 
 
 
