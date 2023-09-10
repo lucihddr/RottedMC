@@ -10,7 +10,7 @@ import net.workswave.rotted.Rotted;
 @Mod.EventBusSubscriber(modid = Rotted.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModEvents {
     @SubscribeEvent
-    public static void entityAttributeEvent(EntityAttributeCreationEvent event) {
-        event.put(ModEntities.MARINE.get(), MarineEntity.createMobAttributes().build());
+    public static void registerAttributes(EntityAttributeCreationEvent event) {
+        event.put(ModEntities.MARINE.get(), MarineEntity.createAttributes().build());
     }
 }
