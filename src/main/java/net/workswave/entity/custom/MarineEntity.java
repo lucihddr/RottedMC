@@ -61,16 +61,19 @@ public class MarineEntity extends Zombie implements GeoEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
     }
-    @Nullable
+
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createLivingAttributes()
-                .add(Attributes.ATTACK_KNOCKBACK, 1D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.3D)
+        return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20D)
-                .add(Attributes.ATTACK_DAMAGE, 6D)
-                .add(Attributes.ARMOR, 2.0D);
+                .add(Attributes.MOVEMENT_SPEED, 0.3)
+                .add(Attributes.ATTACK_DAMAGE, 4D)
+                .add(Attributes.ARMOR, 8D)
+                .add(Attributes.FOLLOW_RANGE, 16)
+                .add(Attributes.ATTACK_KNOCKBACK, 0.3);
+
     }
+
+
     protected SoundEvent getAmbientSound() {
         return this.isInWater() ? SoundEvents.DROWNED_AMBIENT_WATER : SoundEvents.DROWNED_AMBIENT;
     }
