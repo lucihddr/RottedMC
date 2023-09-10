@@ -4,16 +4,18 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.workswave.entity.ModEntities;
+import net.workswave.entity.client.MarineRenderer;
 import net.workswave.item.ModCreativeModTabs;
 import net.workswave.item.ModItems;
 import org.slf4j.Logger;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 @Mod(Rotted.MODID)
 public class Rotted {
@@ -26,8 +28,10 @@ public class Rotted {
         modEventBus.addListener(this::commonSetup);
         ModCreativeModTabs.register(modEventBus);
         ModItems.register(modEventBus);
-
+        ModEntities.register(modEventBus);
     }
+
+
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
@@ -40,21 +44,13 @@ public class Rotted {
         event.accept(ModItems.ROTTEN);
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event)
-    {
 
-    }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents
-    {
+    public static class ClientModEvents {
         @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event)
-        {
-
+        public static void onClientSetup(FMLClientSetupEvent event) {
+            EntityRenderers.register(ModEntities.MARINE.get(), MarineRenderer::new);
         }
     }
 }
