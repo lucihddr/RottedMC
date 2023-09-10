@@ -76,6 +76,17 @@ public class MarineEntity extends Zombie implements GeoEntity {
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
         this.goalSelector.addGoal(4, new RandomSwimmingGoal(this, 1.0D, 10));
     }
+    @Nullable
+    public static AttributeSupplier.Builder createAttributes() {
+        return Mob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 20D)
+                .add(Attributes.MOVEMENT_SPEED, 0.3)
+                .add(Attributes.ATTACK_DAMAGE, 4D)
+                .add(Attributes.ARMOR, 8D)
+                .add(Attributes.FOLLOW_RANGE, 32)
+                .add(Attributes.ATTACK_KNOCKBACK, 0.5);
+
+    }
     protected PathNavigation createNavigation(Level worldIn) {
         return new WaterBoundPathNavigation(this, worldIn);
     }
@@ -90,16 +101,6 @@ public class MarineEntity extends Zombie implements GeoEntity {
         return MobType.WATER;
     }
 
-    public int getWaterSearchRange() {
-        return 32;
-
-    }
-    public boolean shouldEnterWater() {
-        return true;
-    }
-    public boolean shouldLeaveWater() {
-        return this.getTarget() != null && !this.getTarget().isInWater();
-    }
     boolean wantsToSwim() {
         if (this.searchingForLand) {
             return true;
@@ -272,19 +273,6 @@ public class MarineEntity extends Zombie implements GeoEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
     }
-
-    @Nullable
-    public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20D)
-                .add(Attributes.MOVEMENT_SPEED, 0.3)
-                .add(Attributes.ATTACK_DAMAGE, 4D)
-                .add(Attributes.ARMOR, 8D)
-                .add(Attributes.FOLLOW_RANGE, 16)
-                .add(Attributes.ATTACK_KNOCKBACK, 0.3);
-
-    }
-
 
     protected SoundEvent getAmbientSound() {
         return this.isInWater() ? SoundEvents.DROWNED_AMBIENT_WATER : SoundEvents.DROWNED_AMBIENT;

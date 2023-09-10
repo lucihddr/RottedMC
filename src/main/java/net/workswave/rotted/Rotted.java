@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import software.bernie.geckolib.GeckoLib;
 
 @Mod(Rotted.MODID)
 public class Rotted {
@@ -23,12 +24,13 @@ public class Rotted {
     private static final Logger LOGGER = LogUtils.getLogger();
     public Rotted()
     {
+        GeckoLib.initialize();
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);
-        ModCreativeModTabs.register(modEventBus);
-        ModItems.register(modEventBus);
-        ModEntities.register(modEventBus);
+        ModCreativeModTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        ModItems.ITEMS.register(modEventBus);
+        ModEntities.ENTITY_TYPES.register(modEventBus);
     }
 
 
@@ -51,6 +53,7 @@ public class Rotted {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             EntityRenderers.register(ModEntities.MARINE.get(), MarineRenderer::new);
+            LOGGER.info("Why are there so many zombies?");
         }
     }
 }
