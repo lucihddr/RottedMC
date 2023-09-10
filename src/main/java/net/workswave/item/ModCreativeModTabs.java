@@ -19,6 +19,7 @@ public class ModCreativeModTabs {
                     .displayItems((pParameters, pOutput) -> {
 
                         pOutput.accept(ModItems.ROTTEN.get());
+                        pOutput.accept(ModItems.MARINE_SPAWN_EGG.get());
 
                     })
                     .build());
