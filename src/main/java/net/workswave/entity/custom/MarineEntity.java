@@ -1,25 +1,35 @@
 package net.workswave.entity.custom;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.navigation.WaterBoundPathNavigation;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.ai.util.GoalUtils;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
+import net.workswave.entity.ai.GroundPathNavigatorWide;
+import net.workswave.entity.ai.MobAIFindWater;
+import net.workswave.entity.ai.MobAILeaveWater;
+import net.workswave.entity.ai.SemiAquaticPathNavigator;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -58,6 +68,10 @@ public class MarineEntity extends Zombie implements GeoEntity {
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.goalSelector.addGoal(4, new RandomStrollGoal(this, 0.7D, 25, true));
         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(5, new MarineGoToBeachGoal(this, 1.0D));
+        this.goalSelector.addGoal(6, new MarineSwimUpGoal(this, 1.3D, this.level().getSeaLevel()));
+        this.goalSelector.addGoal(8, new MobAIFindWater(this,1.0D));
+        this.goalSelector.addGoal(8, new MobAILeaveWater(this));
         this.goalSelector.addGoal(11, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
         this.goalSelector.addGoal(4, new RandomSwimmingGoal(this, 1.0D, 10));
@@ -76,16 +90,13 @@ public class MarineEntity extends Zombie implements GeoEntity {
         return MobType.WATER;
     }
 
-    @Override
     public int getWaterSearchRange() {
         return 32;
 
     }
-    @Override
     public boolean shouldEnterWater() {
         return true;
     }
-    @Override
     public boolean shouldLeaveWater() {
         return this.getTarget() != null && !this.getTarget().isInWater();
     }
@@ -142,24 +153,24 @@ public class MarineEntity extends Zombie implements GeoEntity {
             this.isLandNavigator = false;
         }
     }
-    static class BulldrogiothGoToBeachGoal extends MoveToBlockGoal {
-        private final BulldrogiothEntity bulldrogiothEntity;
-        public BulldrogiothGoToBeachGoal(BulldrogiothEntity p_32409_, double p_32410_) {
+    static class MarineGoToBeachGoal extends MoveToBlockGoal {
+        private final MarineEntity marineEntity;
+        public MarineGoToBeachGoal(MarineEntity p_32409_, double p_32410_) {
             super(p_32409_, p_32410_, 8, 2);
-            this.bulldrogiothEntity = p_32409_;
+            this.marineEntity = p_32409_;
         }
         public boolean canUse() {
-            return super.canUse() && this.bulldrogiothEntity.level().isRaining() && this.bulldrogiothEntity.isInWater() && this.bulldrogiothEntity.getY() >= (double)(this.bulldrogiothEntity.level().getSeaLevel() - 3);
+            return super.canUse() && this.marineEntity.level().isRaining() && this.marineEntity.isInWater() && this.marineEntity.getY() >= (double)(this.marineEntity.level().getSeaLevel() - 3);
         }
         public boolean canContinueToUse() {
             return super.canContinueToUse();
         }
         protected boolean isValidTarget(LevelReader p_32413_, BlockPos p_32414_) {
             BlockPos blockpos = p_32414_.above();
-            return p_32413_.isEmptyBlock(blockpos) && p_32413_.isEmptyBlock(blockpos.above()) ? p_32413_.getBlockState(p_32414_).entityCanStandOn(p_32413_, p_32414_, this.bulldrogiothEntity) : false;
+            return p_32413_.isEmptyBlock(blockpos) && p_32413_.isEmptyBlock(blockpos.above()) ? p_32413_.getBlockState(p_32414_).entityCanStandOn(p_32413_, p_32414_, this.marineEntity) : false;
         }
         public void start() {
-            this.bulldrogiothEntity.setSearchingForLand(false);
+            this.marineEntity.setSearchingForLand(false);
             super.start();
         }
         public void stop() {
@@ -167,43 +178,92 @@ public class MarineEntity extends Zombie implements GeoEntity {
         }
     }
 
-    static class BulldrogiothSwimUpGoal extends Goal {
-        private final BulldrogiothEntity bulldrogiothEntity;
+    static class MarineSwimUpGoal extends Goal {
+        private final MarineEntity marineEntity;
         private final double speedModifier;
         private final int seaLevel;
         private boolean stuck;
-        public BulldrogiothSwimUpGoal(BulldrogiothEntity p_32440_, double p_32441_, int p_32442_) {
-            this.bulldrogiothEntity = p_32440_;
+        public MarineSwimUpGoal(MarineEntity p_32440_, double p_32441_, int p_32442_) {
+            this.marineEntity = p_32440_;
             this.speedModifier = p_32441_;
             this.seaLevel = p_32442_;
         }
         public boolean canUse() {
-            return (this.bulldrogiothEntity.level().isRaining() || this.bulldrogiothEntity.isInWater())&& this.bulldrogiothEntity.getY() < (double)(this.seaLevel - 2);
+            return (this.marineEntity.level().isRaining() || this.marineEntity.isInWater())&& this.marineEntity.getY() < (double)(this.seaLevel - 2);
         }
         public boolean canContinueToUse() {
             return this.canUse() && !this.stuck;
         }
         public void tick() {
-            if (this.bulldrogiothEntity.getY() < (double)(this.seaLevel - 1) && (this.bulldrogiothEntity.getNavigation().isDone() || this.bulldrogiothEntity.closeToNextPos())) {
-                Vec3 vec3 = DefaultRandomPos.getPosTowards(this.bulldrogiothEntity, 4, 8, new Vec3(this.bulldrogiothEntity.getX(), (double)(this.seaLevel - 1), this.bulldrogiothEntity.getZ()), (double)((float)Math.PI / 2F));
+            if (this.marineEntity.getY() < (double)(this.seaLevel - 1) && (this.marineEntity.getNavigation().isDone() || this.marineEntity.closeToNextPos())) {
+                Vec3 vec3 = DefaultRandomPos.getPosTowards(this.marineEntity, 4, 8, new Vec3(this.marineEntity.getX(), (double)(this.seaLevel - 1), this.marineEntity.getZ()), (double)((float)Math.PI / 2F));
                 if (vec3 == null) {
                     this.stuck = true;
                     return;
                 }
-                this.bulldrogiothEntity.getNavigation().moveTo(vec3.x, vec3.y, vec3.z, this.speedModifier);
+                this.marineEntity.getNavigation().moveTo(vec3.x, vec3.y, vec3.z, this.speedModifier);
             }
         }
         public void start() {
-            this.bulldrogiothEntity.setSearchingForLand(true);
+            this.marineEntity.setSearchingForLand(true);
             this.stuck = false;
         }
         public void stop() {
-            this.bulldrogiothEntity.setSearchingForLand(false);
+            this.marineEntity.setSearchingForLand(false);
         }
     }
 
     public void setSearchingForLand(boolean p_32399_) {
         this.searchingForLand = p_32399_;
+    }
+    protected boolean closeToNextPos() {
+        Path path = this.getNavigation().getPath();
+        if (path != null) {
+            BlockPos blockpos = path.getTarget();
+            if (blockpos != null) {
+                double d0 = this.distanceToSqr((double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ());
+                if (d0 < 4.0D) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    static class MarineMoveControl extends MoveControl {
+        private final MarineEntity marineEntity;
+        public MarineMoveControl(MarineEntity marineEntity) {
+            super(marineEntity);
+            this.marineEntity = marineEntity;
+        }
+        public void tick() {
+            LivingEntity livingentity = this.marineEntity.getTarget();
+            if (this.marineEntity.wantsToSwim() && this.marineEntity.isInWater()) {
+                if (livingentity != null && livingentity.getY() > this.marineEntity.getY() || this.marineEntity.searchingForLand) {
+                    this.marineEntity.setDeltaMovement(this.marineEntity.getDeltaMovement().add(0.0D, 0.002D, 0.0D));
+                }
+                if (this.operation != MoveControl.Operation.MOVE_TO || this.marineEntity.getNavigation().isDone()) {
+                    this.marineEntity.setSpeed(0.0F);
+                    return;
+                }
+                double d0 = this.wantedX - this.marineEntity.getX();
+                double d1 = this.wantedY - this.marineEntity.getY();
+                double d2 = this.wantedZ - this.marineEntity.getZ();
+                double d3 = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
+                d1 /= d3;
+                float f = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+                this.marineEntity.setYRot(this.rotlerp(this.marineEntity.getYRot(), f, 90.0F));
+                this.marineEntity.yBodyRot = this.marineEntity.getYRot();
+                float f1 = (float)(this.speedModifier * this.marineEntity.getAttributeValue(Attributes.MOVEMENT_SPEED));
+                float f2 = Mth.lerp(0.125F, this.marineEntity.getSpeed(), f1);
+                this.marineEntity.setSpeed(f2);
+                this.marineEntity.setDeltaMovement(this.marineEntity.getDeltaMovement().add((double)f2 * d0 * 0.005D, (double)f2 * d1 * 0.1D, (double)f2 * d2 * 0.005D));
+            } else {
+                if (!this.marineEntity.onGround()) {
+                    this.marineEntity.setDeltaMovement(this.marineEntity.getDeltaMovement().add(0.0D, -0.008D, 0.0D));
+                }
+                super.tick();
+            }
+        }
     }
 
 
